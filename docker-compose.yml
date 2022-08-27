@@ -1,0 +1,14 @@
+version: "3.2"
+services:
+
+  sql-server-db:
+    container_name: DB_UNIHORIZONTE
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    volumes:
+      - ./mssl/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --init-file /docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "Unihorizonte2022"
+      ACCEPT_EULA: "Y"

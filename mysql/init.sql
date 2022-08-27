@@ -1,0 +1,2 @@
+DROP DATABASE IF EXISTS db_unihorizonte;
+CREATE DATABASE IF NOT EXISTS db_unihorizonte;
