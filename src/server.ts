@@ -22,6 +22,7 @@ class ServerBootstrap extends ConfigServer {
     super();
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+    this.app.set('pkg', pkg);
     this.passportUse();
     this.dbConnect();
     this.app.use(morgan("dev"));
@@ -34,7 +35,7 @@ class ServerBootstrap extends ConfigServer {
       })
     );
 
-    this.app.get('/api/unihorizonte', (req, res) => {
+    this.app.get('/api/unihorizonte/', (req, res) => {
       res.json({
         name: this.app.get('pkg').name,
         description: this.app.get('pkg').description,
@@ -42,6 +43,7 @@ class ServerBootstrap extends ConfigServer {
         version: this.app.get('pkg').version,
       })
     });
+    
     this.app.use("/api/unihorizonte", this.routers());
     this.listen();
   }
