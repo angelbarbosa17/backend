@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import passport from "passport";
-//import { RoleType } from "../../user/dto/user.dto";
+import { UserDTO } from "../../user/dto/user.dto";
+import { isEmpty, validate } from "class-validator";
 import { UserEntity } from "../../user/entities/user.entity";
 import { HttpResponse } from "../response/http.response";
 
@@ -14,7 +15,7 @@ export class SharedMiddleware {
     const user = req.user as UserEntity;
     const role = { role: '' }
     Object.entries(user).forEach(([key, value], index) => {
-      if (key == 'sub' && value == 'Moderator')
+      if (key == 'role_name' && value == 'Moderator')
         role.role = value
     });
     if (role.role !== "Moderator") {
@@ -26,7 +27,7 @@ export class SharedMiddleware {
     const user = req.user as UserEntity;
     const role = { role: '' }
     Object.entries(user).forEach(([key, value], index) => {
-      if (key == 'sub' && value == 'User')
+      if (key == 'role_name' && value == 'User')
         role.role = value
     });
     if (role.role !== "User") {
@@ -38,12 +39,28 @@ export class SharedMiddleware {
     const user = req.user as UserEntity;
     const role = { role: false }
     Object.entries(user).forEach(([key, value], index) => {
-      if (key == 'sub' && value == 'Admin')
+      if (key == 'role_name' && value == 'Admin')
         role.role = true
     });
     if (!role.role) {
       return this.httpResponse.Unauthorized(res, "You do not have permission");
     }
     next();
+  }
+  userChangePasswordValidator(req: Request, res: Response, next: NextFunction) {
+    const {
+      old_password
+      , new_password
+    } = req.body;
+
+    if (!req.body.hasOwnProperty('old_password')) {
+      return this.httpResponse.Error(res, "Please specify the old_password property");
+    }
+
+    if (!req.body.hasOwnProperty('new_password')) {
+      return this.httpResponse.Error(res, "Please specify the new_password property");
+    }
+
+    return next();
   }
 }

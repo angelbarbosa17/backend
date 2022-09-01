@@ -11,18 +11,31 @@ export class AuthController extends AuthService {
   }
 
   async login(req: Request, res: Response) {
-    try {      
+    try {
       const userEncode = req.user as UserEntity;
-      const encode = await this.generateJWT(userEncode);      
+      const encode = await this.generateJWT(userEncode);
       if (!encode) {
         return this.httpResponse.Unauthorized(res, "No tienes permisos");
-      }      
+      }
       res.header("Content-Type", "application/json");
       res.cookie("accessToken", encode.accessToken, { maxAge: 60000 * 60 });
       res.write(JSON.stringify(encode));
       res.end();
     } catch (err) {
-      console.error(err);
+      return this.httpResponse.Error(res, err);
+    }
+  }
+
+  async changePassword(req: Request, res: Response) {
+    try {
+      const userEncode = req.user as UserEntity;
+      const { old_password, new_password } = req.body;
+      const { message, process } = await this.generateNewpass(userEncode, old_password, new_password);
+      if (!process) {
+        return this.httpResponse.Error(res, message);
+      }
+      return this.httpResponse.Ok(res, message);
+    } catch (err) {
       return this.httpResponse.Error(res, err);
     }
   }

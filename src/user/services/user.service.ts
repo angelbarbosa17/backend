@@ -59,7 +59,6 @@ export class UserService extends BaseService<UserEntity> {
   }
 
   async findUserWithRelation(id: string): Promise<UserEntity | null> {
-    console.log(id);
     return (await this.execRepository)
       .createQueryBuilder("user")
       .leftJoinAndSelect("user.role", "users")
@@ -74,6 +73,15 @@ export class UserService extends BaseService<UserEntity> {
       .where({ user_email })
       .getOne();
   }
+
+  async checkPassword(id: string): Promise<UserEntity | null> {
+    return (await this.execRepository)
+      .createQueryBuilder("user")
+      .addSelect("user.user_password")
+      .where({ id })
+      .getOne();
+  }
+
   async findByUsername(user_login: string): Promise<UserEntity | null> {
     return (await this.execRepository)
       .createQueryBuilder("user")
@@ -81,12 +89,43 @@ export class UserService extends BaseService<UserEntity> {
       .where({ user_login })
       .getOne();
   }
-  async createUser(body: UserDTO): Promise<UserEntity> {
+  async createUser(body: UserDTO): Promise<{ process: boolean, message: string, data: UserEntity | null}> {
     const newUser = (await this.execRepository).create(body);
     const hashPass = await bcrypt.hash(newUser.user_password, 10);
     newUser.user_password = hashPass;
-    return (await this.execRepository).save(newUser);
+    const unique = await (await this.execRepository).findOne({
+      where: [
+        { user_identification: newUser.user_identification },
+        { user_login: newUser.user_login },
+        { user_email: newUser.user_email }
+      ]
+    });
+    if (!unique) {
+      return {
+        process: true,
+        message: "The user has been created successfully",
+        data: await (await this.execRepository).save(newUser)
+      }
+    } else {
+      return {
+        process: false,
+        message: "User data is already registered, please validate and try again.",
+        data: null
+      }
+    }
   }
+
+  async changePassword(id: string, oldPassword: string, newPassword: string): Promise<UpdateResult> {
+    const valid = new UserDTO();
+    const updatePass = (await this.execRepository).create(valid);
+    updatePass.user_old_password = await bcrypt.hash(oldPassword, 10);
+    updatePass.user_password = await bcrypt.hash(newPassword, 10);
+    return (await this.execRepository).update(id, {
+      user_password: updatePass.user_password,
+      user_old_password: updatePass.user_old_password
+    });
+  }
+
   async deleteUser(id: string): Promise<{ message: string; data: DeleteResult | null }> {
     const exist = await (await this.execRepository).findOneBy({ id });
     if (exist) {

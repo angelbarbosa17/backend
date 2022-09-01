@@ -48,10 +48,12 @@ export class UserController {
   }
   async createUser(req: Request, res: Response) {
     try {
-      const data = await this.userService.createUser(req.body);
-      return this.httpResponse.Ok(res, data);
+      const { process, message, data } = await this.userService.createUser(req.body);      
+      if(process && data){
+        return this.httpResponse.Ok(res, data);
+      }
+      return this.httpResponse.Error(res, message);
     } catch (e) {
-      console.error(e);
       return this.httpResponse.Error(res, e);
     }
   }
@@ -76,7 +78,7 @@ export class UserController {
     try {
       const { message, data } = await this.userService.deleteUser(id);
       if (!(data?.affected)) {
-        return this.httpResponse.NotFound(res, "It is not possible to remove the record. "+ message);
+        return this.httpResponse.NotFound(res, "It is not possible to remove the record. " + message);
       }
       return this.httpResponse.Ok(res, data);
     } catch (e) {
