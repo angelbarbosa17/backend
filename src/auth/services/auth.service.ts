@@ -4,6 +4,7 @@ import * as bcrypt from "bcrypt";
 import { UserService } from "../../user/services/user.service";
 import { UserEntity } from "../../user/entities/user.entity";
 import { PayloadToken } from "../interfaces/auth.interface";
+import { UserDTO } from "../../user/dto/user.dto";
 
 export class AuthService extends ConfigServer {
   constructor(
@@ -16,7 +17,7 @@ export class AuthService extends ConfigServer {
   public async validateUser(
     user_login: string,
     user_password: string
-  ): Promise<UserEntity | null> {    
+  ): Promise<UserEntity | null> {
     const userByEmail = await this.userService.findByEmail(user_login);
     const userByUsername = await this.userService.findByUsername(user_login);
 
@@ -44,14 +45,17 @@ export class AuthService extends ConfigServer {
 
   public async generateJWT(
     user: UserEntity
-  ): Promise<{ accessToken: string; user: UserEntity }> {  
-    const userConsult = await this.userService.findUserWithRole(      
+  ): Promise<{ accessToken: string; user: UserEntity }> {
+    const userConsult = await this.userService.findUserWithRole(
       user.id,
       user.role_id
     );
     const payload: PayloadToken = {
-      role: userConsult!.role_id,
-      sub: userConsult!.role.role_name,
+      role_id: userConsult!.role_id,
+      role_name: userConsult!.role.role_name,
+      user_login: userConsult!.user_login,
+      user_mail: userConsult!.user_email,
+      id: userConsult!.id
     };
 
     if (userConsult) {
@@ -62,5 +66,39 @@ export class AuthService extends ConfigServer {
       accessToken: this.sing(payload, this.getEnvironment("JWT_SECRET")),
       user,
     };
+  }
+  public async generateNewpass(user: UserEntity, oldPassword: string, newPassword: string): Promise<{ message: string; process: boolean; }> {
+    const userConsult = await this.userService.checkPassword(user.id);
+    try {
+      if (userConsult) {
+        const isMatch = await bcrypt.compare(oldPassword, userConsult!.user_password);
+        if (!isMatch) {
+          return {
+            message: "The above password does not match or the user does not exist.",
+            process: false,
+          }
+        }
+        const update = await this.userService.changePassword(user.id, oldPassword, newPassword);
+        if (!update) {
+          return {
+            message: "Password not updated",
+            process: false
+          }
+        }
+        return {
+          message: "Password has been updated successfully",
+          process: true
+        }
+      }
+      return {
+        message: "Password not updated",
+        process: false
+      }
+    } catch (error) {
+      return {
+        message: "Password not updated",
+        process: false
+      }
+    }
   }
 }
