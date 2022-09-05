@@ -1,3 +1,4 @@
 node_modules
 src/migrations/*
+npm-debug.log
 dist

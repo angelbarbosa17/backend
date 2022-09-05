@@ -16,6 +16,6 @@ RUN npm run m:gen -- src/migrations/InitDB
 
 RUN npm run m:run
 
-EXPOSE 8000
+EXPOSE 7000
 
 CMD ["npm","start"]

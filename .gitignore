@@ -3,3 +3,4 @@
 .vscode/*
 anotaciones.txt
 src/migrations
+.env
